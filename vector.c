@@ -116,7 +116,7 @@ void* vector_end(const struct vector* self)
 
 /*******************************************************************************
 * vector_resize: Ändrar storlek/kapacitet på given vektor.
-*                - self: Pekare till vektorn.
+*                - self    : Pekare till vektorn.
 *                - new_size: Vektorns nya storlek/kapacitet.
 *******************************************************************************/
 int vector_resize(struct vector* self,
@@ -159,7 +159,7 @@ int vector_resize(struct vector* self,
 
 /*******************************************************************************
 * vector_push: Lägger till ett nytt element längst bak i angiven vektor.
-*              - self: Pekare till vektorn.
+*              - self       : Pekare till vektorn.
 *              - new_element: Pekare till det nya elementet.
 *******************************************************************************/
 int vector_push(struct vector* self,
@@ -238,7 +238,7 @@ int vector_pop(struct vector* self)
 * vector_set: Lägger in ett nytt element på angivet index.
 *             - self: Pekare till vektorn.
 *             - index: Index där det nya elementet skall placeras.
-*             - val: Pekare till det nya elementet.
+*             - val  : Pekare till det nya elementet.
 *******************************************************************************/
 void vector_set(struct vector* self,
                 const size_t index,
@@ -265,11 +265,11 @@ void vector_set(struct vector* self,
 /*******************************************************************************
 * vector_get: Returnerar pekare till elementet lagrat på angivet index i
 *             angiven vektor. Därmed returneras elementets adress.
-*             - self: Pekare till vektorn.
+*             - self : Pekare till vektorn.
 *             - index: Index till elementet som skall returneras.
 *******************************************************************************/
-void* vector_get(struct vector* self,
-                 const size_t index)
+const void* vector_get(const struct vector* self,
+                       const size_t index)
 {
    if (index >= self->size)
    {
@@ -294,12 +294,111 @@ void* vector_get(struct vector* self,
 }
 
 /*******************************************************************************
+* vector_copy: Kopierar innehållet från en vektor till en annan. Eventuellt 
+*              tidigare innehåll raderas ur vektorn som kopiering sker till.
+*              - self  : Pekare till den vektor som kopierat innehåll skall 
+*                        lagras i.
+*              - source: Pekare till den vektor vars innehåll skall kopieras.
+*******************************************************************************/
+int vector_copy(struct vector* self,
+                const struct vector* source)
+{
+   vector_delete(self);
+   vector_new(self, source->type);
+   vector_resize(self, source->size);
+
+   if (self->size == source->size)
+   {
+      for (size_t i = 0; i < self->size; ++i)
+      {
+         vector_set(self, i, vector_get(source, i));
+      }
+
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+}
+
+/*******************************************************************************
+* vector_join: Sätter samman innehåll lagrat i två vektorer genom att kopiera 
+*              från en vektor till en annan. Detta sker under förutsättning
+*              att vektorerna innehar samma datatyp, annars görs ingenting.
+*              - self        : Pekare till den vektor där det sammansatta
+*                              innehållet skall lagras.
+*              - other_vector: Pekare till den vektor vars innehåll skall
+*                              kopieras till den sammansatta vektorn.
+*******************************************************************************/
+int vector_join(struct vector* self,
+                const struct vector* other_vector)
+{
+   if (!self->size)
+   {
+      return vector_copy(self, other_vector);
+   }
+   else
+   {
+      if (self->type == other_vector->type)
+      {
+         const size_t offset = self->size;
+         const size_t new_size = self->size + other_vector->size;
+         vector_resize(self, new_size);
+
+         if (self->size == new_size)
+         {
+            for (size_t i = 0; i < other_vector->size; ++i)
+            {
+               vector_set(self, i + offset, vector_get(other_vector, i));
+            }
+
+            return 0;
+         }
+         else
+         {
+            return 1;
+         }
+      }
+      else
+      {
+         return 1;
+      }
+   }
+}
+
+/*******************************************************************************
+* vector_move: Förflyttar innehåll från en vektor till en annan. Efter att
+*              förflyttningen är genomförd äger angiven vektor allokerat minne,
+*              samtidigt som den vektor som utgör källa töms och kan därför
+*              inte längre användas för att komma åt innehållet.
+*              - self  : Pekare till den vektor som innehållet från källan
+*                        skall förflyttas till.
+*              - source: Pekare till den vektor som utgör källa.
+*******************************************************************************/
+void vector_move(struct vector* self,
+                 struct vector* source)
+{
+   vector_delete(self);
+   self->data = source->data;
+   self->type = source->type;
+   self->size = source->size;
+
+   source->data.integer = 0;
+   source->data.decimal = 0;
+   source->data.natural = 0;
+   source->type = VECTOR_TYPE_NONE;
+   source->size = 0;
+   return;
+}
+
+/*******************************************************************************
 * vector_print: Skriver ut samtliga element lagrade i vektor på var sin rad
 *               via angiven utström, där standardutenhet stdout används som
 *               default för utskrift i terminalen. Vektorns innehåll kan vid
 *               behov skrivas till en fil genom att öppna en fil för skrivning
 *               eller bifogning via en filpekare och passera denna pekare.
-*               - self: Pekare till vektorn.
+*               - self   : Pekare till vektorn.
 *               - ostream: Pekare till angiven utström.
 *******************************************************************************/
 void vector_print(const struct vector* self,

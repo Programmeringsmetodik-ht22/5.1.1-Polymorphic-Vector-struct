@@ -61,8 +61,14 @@ int vector_pop(struct vector* self);
 void vector_set(struct vector* self,
                 const size_t index,
                 const void* val);
-void* vector_get(struct vector* self,
-                 const size_t index);
+const void* vector_get(const struct vector* self,
+                       const size_t index);
+int vector_copy(struct vector* self,
+                const struct vector* source);
+int vector_join(struct vector* self,
+                const struct vector* other_vector);
+void vector_move(struct vector* self,
+                 struct vector* source);
 void vector_print(const struct vector* self,
                   FILE* ostream);
 
